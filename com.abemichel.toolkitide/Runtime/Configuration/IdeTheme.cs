@@ -22,7 +22,7 @@ namespace Configuration
         public Color ScrollbarThumbHoverColor = new Color(0.4f, 0.4f, 0.4f, 0.8f);
 
         [Header("Tokens")]
-        public Color DefaultTextColor = new Color(0.56f, 0.74f, 0.99f);
+        public Color DefaultTextColor = Color.white;
         public Color KeywordColor = new Color(0.56f, 0.74f, 0.99f);
         public Color StringLiteralColor = new Color(0.80f, 0.52f, 0.40f);
         public Color CommentColor = new Color(0.47f, 0.53f, 0.47f);

@@ -86,7 +86,6 @@ namespace UI
             _onDocumentChange = onDocumentChange;
         
             focusable = true;
-            // style.color = new StyleColor(_config.Theme.DefaultTextColor);
             style.color = new StyleColor(Color.white);
             style.backgroundColor = new StyleColor(Color.clear);
             style.unityBackgroundImageTintColor = new StyleColor(Color.white);
