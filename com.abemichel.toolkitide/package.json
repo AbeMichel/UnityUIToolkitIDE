@@ -1,0 +1,10 @@
+{
+  "name": "com.abemichel.toolkitide",
+  "version": "0.1.0",
+  "displayName": "Customizable Base IDE for UI Toolkit",
+  "description": "UI Toolkit-based IDE frontend with syntax highlighting and tooltips.",
+  "unity": "6000.4",
+  "author": {
+    "name": "Abe Michel"
+  }
+}

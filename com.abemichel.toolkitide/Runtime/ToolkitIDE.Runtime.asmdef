@@ -1,0 +1,12 @@
+{
+  "name": "ToolkitIDE.Runtime",
+  "rootNamespace": "Com.Abemichel.ToolkitIDE",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": []
+}
