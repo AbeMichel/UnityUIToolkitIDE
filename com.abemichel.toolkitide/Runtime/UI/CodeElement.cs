@@ -97,7 +97,6 @@ namespace UI
             RegisterCallback<MouseLeaveEvent>(e => OnHoverExit?.Invoke());
 
             _hoverTask = schedule.Execute(TriggerHover);
-            _hoverTask.Pause();
 
             _config.OnConfigChanged += () =>
             {
