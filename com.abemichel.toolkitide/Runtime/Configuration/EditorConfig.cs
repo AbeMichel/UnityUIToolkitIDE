@@ -4,6 +4,7 @@ using UnityEngine.TextCore.Text;
 
 namespace AbesIde.Configuration
 {
+    [System.Serializable]
     public class EditorConfig
     {
         public FontAsset Font;
