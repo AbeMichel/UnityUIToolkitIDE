@@ -22,12 +22,14 @@ namespace AbesIde.UI
     
         // Tokenized lines - outer list is lines, inner is tokens on that line
         private List<List<TextToken>> _lines = new();
+        private List<float> _lineWidths = new() { 0f };
     
         // Cursor state
         private int _cursorLine = 0;
         private int _cursorCol = 0;
         private bool _cursorVisible = true;
         private double _lastCursorActivityTime = 0.0;
+        private IVisualElementScheduledItem _blinkTask;
     
         // Selection state (anchor is where selection started)
         private int _selectionAnchorLine = -1;
@@ -46,6 +48,7 @@ namespace AbesIde.UI
         public int CursorCol => _cursorCol;
 
         public Action OnCursorMoved { get; set; }
+        public Action OnCharacterTyped { get; set; }
         public Action<int, int, Vector2> OnHover { get; set; }
         public Action OnHoverExit { get; set; }
 
@@ -71,7 +74,7 @@ namespace AbesIde.UI
             MarkDirtyRepaint();
         }
     
-        private bool HasSelection =>
+        public bool HasSelection =>
             _selectionAnchorLine >= 0 &&
             (_selectionAnchorLine != _cursorLine || _selectionAnchorChar != _cursorCol);
 
@@ -95,11 +98,16 @@ namespace AbesIde.UI
             RegisterMouseCallbacks();
             RegisterCallback<KeyDownEvent>(OnKeyDown);
             RegisterCallback<MouseLeaveEvent>(e => OnHoverExit?.Invoke());
+            RegisterCallback<FocusInEvent>(e => { _blinkTask.Resume(); MarkActivity(); });
+            RegisterCallback<FocusOutEvent>(e => { _blinkTask.Pause(); _cursorVisible = false; MarkDirtyRepaint(); });
 
             _hoverTask = schedule.Execute(TriggerHover);
+            _blinkTask = schedule.Execute(BlinkCursor).Every(500);
+            _blinkTask.Pause();
 
             _config.OnConfigChanged += () =>
             {
+                FullRecalculateWidths();
                 UpdateLayout();
                 MarkDirtyRepaint();
             };
@@ -114,6 +122,7 @@ namespace AbesIde.UI
         public void SetTokens(List<List<TextToken>> tokenizedLines)
         {
             _lines = tokenizedLines;
+            FullRecalculateWidths();
             UpdateLayout();
             MarkDirtyRepaint();
         }
@@ -128,6 +137,15 @@ namespace AbesIde.UI
         {
             _lines.RemoveRange(startLine, linesRemoved);
             _lines.InsertRange(startLine, newTokens);
+
+            _lineWidths.RemoveRange(startLine, linesRemoved);
+            var newWidths = new List<float>();
+            foreach (var tokens in newTokens)
+            {
+                newWidths.Add(CalculateLineWidth(tokens));
+            }
+            _lineWidths.InsertRange(startLine, newWidths);
+
             UpdateLayout();
             MarkDirtyRepaint();
         }
@@ -217,9 +235,31 @@ namespace AbesIde.UI
             style.minWidth = new StyleLength(new Length(100, LengthUnit.Percent));
 
             var maxWidth = 0f;
-            for (int i = 0; i < _lines.Count; i++)
-                maxWidth = Mathf.Max(maxWidth, GetLineWidth(i));
+            foreach (var width in _lineWidths)
+                maxWidth = Mathf.Max(maxWidth, width);
+            
             style.width = maxWidth + _config.FontSize * 2f;
+        }
+
+        private void FullRecalculateWidths()
+        {
+            _lineWidths.Clear();
+            foreach (var lineTokens in _lines)
+            {
+                _lineWidths.Add(CalculateLineWidth(lineTokens));
+            }
+            if (_lineWidths.Count == 0) _lineWidths.Add(0f);
+        }
+
+        private float CalculateLineWidth(List<TextToken> tokens)
+        {
+            var x = 0f;
+            var scale = GetFontScale();
+            foreach (var token in tokens)
+            foreach (var c in token.Text)
+                if (TryGetGlyph(c, out var glyph))
+                    x += glyph.metrics.horizontalAdvance * scale;
+            return x;
         }
 
         #endregion
@@ -296,7 +336,7 @@ namespace AbesIde.UI
                     var y = _config.TopPadding + i * _config.LineHeight;
 
                     var startX = (i == startLine) ? GetCharX(i, startCol) : 0f;
-                    var endX = (i == endLine) ? GetCharX(i, endCol) : GetLineWidth(i);
+                    var endX = (i == endLine) ? GetCharX(i, endCol) : _lineWidths[i];
                 
                     if (endX <= startX) continue;
 
@@ -399,19 +439,6 @@ namespace AbesIde.UI
                     charsSeen++;
                 }
             }
-            return x;
-        }
-
-        private float GetLineWidth(int line)
-        {
-            if (line >= _lines.Count) return 0f;
-            var x = 0f;
-            var scale = GetFontScale();
-            foreach (var token in _lines[line])
-            foreach (var c in token.Text)
-                if (TryGetGlyph(c, out var glyph))
-                    x += glyph.metrics.horizontalAdvance * scale;
-        
             return x;
         }
 
@@ -856,6 +883,7 @@ namespace AbesIde.UI
             // Only handle characters that are not control characters and not part of a shortcut
             if (!char.IsControl(e.character) && !ctrl)
             {
+                OnCharacterTyped?.Invoke();
                 CommitEdit(() =>
                 {
                     if (HasSelection) DeleteSelectedText();

@@ -17,6 +17,7 @@ namespace AbesIde.UI
         private Dictionary<int, ErrorSeverity> _lineSeverities = new();
         private HashSet<int> _errorLines = new();
         private HashSet<int> _todoLines = new();
+        private readonly List<string> _lineLabels = new() { "1" };
         public float ScrollOffset { get; set; }
         public float ViewportHeight { get; set; }
 
@@ -51,7 +52,22 @@ namespace AbesIde.UI
 
         public void SetLineCount(int count)
         {
-            _lineCount = Mathf.Max(1, count);
+            count = Mathf.Max(1, count);
+            if (count == _lineCount) return;
+
+            if (count > _lineCount)
+            {
+                for (int i = _lineCount; i < count; i++)
+                {
+                    _lineLabels.Add((i + 1).ToString());
+                }
+            }
+            else
+            {
+                _lineLabels.RemoveRange(count, _lineCount - count);
+            }
+
+            _lineCount = count;
             MarkDirtyRepaint();
         }
 
@@ -115,10 +131,9 @@ namespace AbesIde.UI
             var rect = contentRect;
             if (rect.width <= 0 || ViewportHeight <= 0) return;
 
-            var labels = BuildLineLabels();
             var scale = GetFontScale();
 
-            for (var i = 0; i < labels.Length; i++)
+            for (var i = 0; i < _lineCount; i++)
             {
                 var y = _config.TopPadding + i * _config.LineHeight;
             
@@ -144,11 +159,12 @@ namespace AbesIde.UI
                 }
 
                 // Pre-warm dynamic font atlas
-                _config.Font.TryAddCharacters(labels[i]);
+                var label = _lineLabels[i];
+                _config.Font.TryAddCharacters(label);
 
                 // Calculate width for right alignment
                 float labelWidth = 0;
-                foreach (var c in labels[i])
+                foreach (var c in label)
                 {
                     if (TryGetGlyph(c, out var glyph))
                     {
@@ -158,18 +174,14 @@ namespace AbesIde.UI
 
                 // Draw line number - manually right-aligned
                 var drawX = rect.width - labelWidth - 8f;
-                mgc.DrawText(labels[i], new Vector2(drawX, y - ScrollOffset), _config.FontSize, _config.Theme.GutterTextColor, _config.Font);
+                mgc.DrawText(label, new Vector2(drawX, y - ScrollOffset), _config.FontSize, _config.Theme.GutterTextColor, _config.Font);
             }
         }
 
         private string[] BuildLineLabels()
         {
-            var labels = new string[_lineCount];
-            for (var i = 0; i < _lineCount; i++)
-            {
-                labels[i] = (i + 1).ToString();
-            }
-            return labels;
+            // No longer used, using cached _lineLabels list
+            return null;
         }
 
         private float GetFontScale()

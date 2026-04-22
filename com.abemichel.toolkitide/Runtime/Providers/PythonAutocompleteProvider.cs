@@ -10,6 +10,8 @@ namespace AbesIde.Providers
     public class PythonAutocompleteProvider : IAutocompleteProvider
     {
         private readonly List<AutocompleteSuggestion> _suggestions;
+        private readonly Dictionary<int, List<AutocompleteSuggestion>> _lineSymbols = new();
+
         private static readonly Regex _varRegex = new(@"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=", RegexOptions.Compiled);
         private static readonly Regex _defRegex = new(@"^\s*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", RegexOptions.Compiled);
         private static readonly Regex _classRegex = new(@"^\s*class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:\(]", RegexOptions.Compiled);
@@ -117,8 +119,8 @@ namespace AbesIde.Providers
                 }
             }
 
-            // 2. Harvesting Dynamic Symbols
-            var harvested = HarvestSymbols(document);
+            // 2. Use Cached Symbols
+            var harvested = _lineSymbols.Values.SelectMany(x => x);
 
             var fullWord = GetFullWordAt(lineText, col);
 
@@ -127,43 +129,63 @@ namespace AbesIde.Providers
                 .OrderBy(s => s.Text);
         }
 
-        private IEnumerable<AutocompleteSuggestion> HarvestSymbols(TextDocument document)
+        public void OnDocumentChanged(DocumentChangeArgs args, TextDocument document)
         {
-            var symbols = new HashSet<string>();
-            var suggestions = new List<AutocompleteSuggestion>();
-
-            for (int i = 0; i < document.LineCount; i++)
+            // 1. Shift indices for lines below the edit
+            if (args.LinesRemoved > 0 || args.LinesAdded > 0)
             {
-                var line = document.GetLine(i);
-                
-                // Functions
-                var match = _defRegex.Match(line);
-                if (match.Success)
+                var newCache = new Dictionary<int, List<AutocompleteSuggestion>>();
+                int delta = args.LinesAdded - args.LinesRemoved;
+
+                foreach (var kvp in _lineSymbols)
                 {
-                    var name = match.Groups[1].Value;
-                    if (symbols.Add(name))
-                        suggestions.Add(new AutocompleteSuggestion(name, "User function", TokenType.Builtin));
-                    continue;
+                    if (kvp.Key < args.StartLine)
+                    {
+                        newCache[kvp.Key] = kvp.Value;
+                    }
+                    else if (kvp.Key >= args.StartLine + args.LinesRemoved)
+                    {
+                        newCache[kvp.Key + delta] = kvp.Value;
+                    }
                 }
 
-                // Classes
-                match = _classRegex.Match(line);
-                if (match.Success)
-                {
-                    var name = match.Groups[1].Value;
-                    if (symbols.Add(name))
-                        suggestions.Add(new AutocompleteSuggestion(name, "User class", TokenType.Builtin));
-                    continue;
-                }
+                _lineSymbols.Clear();
+                foreach (var kvp in newCache) _lineSymbols[kvp.Key] = kvp.Value;
+            }
 
-                // Variables
-                match = _varRegex.Match(line);
-                if (match.Success)
-                {
-                    var name = match.Groups[1].Value;
-                    if (symbols.Add(name))
-                        suggestions.Add(new AutocompleteSuggestion(name, "Variable", TokenType.Default));
-                }
+            // 2. Re-harvest symbols for affected lines
+            for (int i = 0; i < args.LinesAdded; i++)
+            {
+                int lineIndex = args.StartLine + i;
+                var symbols = HarvestLine(document.GetLine(lineIndex));
+                if (symbols.Count > 0) _lineSymbols[lineIndex] = symbols;
+                else _lineSymbols.Remove(lineIndex);
+            }
+        }
+
+        private List<AutocompleteSuggestion> HarvestLine(string line)
+        {
+            var suggestions = new List<AutocompleteSuggestion>();
+            
+            // Functions
+            var match = _defRegex.Match(line);
+            if (match.Success)
+            {
+                suggestions.Add(new AutocompleteSuggestion(match.Groups[1].Value, "User function", TokenType.Builtin));
+            }
+
+            // Classes
+            match = _classRegex.Match(line);
+            if (match.Success)
+            {
+                suggestions.Add(new AutocompleteSuggestion(match.Groups[1].Value, "User class", TokenType.Builtin));
+            }
+
+            // Variables
+            match = _varRegex.Match(line);
+            if (match.Success)
+            {
+                suggestions.Add(new AutocompleteSuggestion(match.Groups[1].Value, "Variable", TokenType.Default));
             }
 
             return suggestions;

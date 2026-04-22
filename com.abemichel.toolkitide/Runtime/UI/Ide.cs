@@ -32,6 +32,8 @@ namespace AbesIde.UI
         private List<CodeError> _currentErrors = new();
         private HashSet<int> _todoLines = new();
 
+        private bool _forceShowAutocomplete;
+
         public Ide(EditorConfig config, ITokenizer tokenizer, IAutocompleteProvider autocompleteProvider, IErrorProvider errorProvider, ISymbolInsightProvider symbolInsightProvider)
         {
             style.flexDirection = FlexDirection.Row;
@@ -76,10 +78,13 @@ namespace AbesIde.UI
             _errorTooltip = new ErrorTooltipElement(config);
             Add(_errorTooltip);
 
+            _code.OnCharacterTyped = () => _forceShowAutocomplete = true;
+
             _code.OnCursorMoved = () =>
             {
                 _code.ScrollToCursor(_scrollView);
-                UpdateAutocomplete();
+                UpdateAutocomplete(_forceShowAutocomplete);
+                _forceShowAutocomplete = false;
                 _symbolInsightMenu.Hide();
                 _errorTooltip.Hide();
             };
@@ -101,7 +106,11 @@ namespace AbesIde.UI
             _scrollView.verticalScroller.RegisterCallback<PointerDownEvent>(e => _code.Focus());
             _scrollView.horizontalScroller.RegisterCallback<PointerDownEvent>(e => _code.Focus());
             // Safety net: if any element inside the IDE unexpectedly gains focus, redirect it.
-            this.RegisterCallback<FocusInEvent>(e => { if (e.target != _code) _code.Focus(); });
+            this.RegisterCallback<FocusInEvent>(e => 
+            { 
+                if (e.target != _code && e.target is VisualElement ve && this.Contains(ve)) 
+                    _code.Focus(); 
+            });
 
             // Unity fires NavigationMoveEvent alongside KeyDownEvent for arrow keys, and
             // the ScrollView's internal trickle-down handler processes it before CodeElement
@@ -175,8 +184,19 @@ namespace AbesIde.UI
             }
         }
 
-        private void UpdateAutocomplete()
+        private void UpdateAutocomplete(bool forceShow = false)
         {
+            if (_code.HasSelection)
+            {
+                _autocompleteMenu.Hide();
+                return;
+            }
+
+            if (!forceShow && !_autocompleteMenu.IsVisible)
+            {
+                return;
+            }
+
             var lineTokens = _code.GetLineTokens(_code.CursorLine);
             var suggestions = _autocompleteProvider.GetSuggestions(_document, _code.CursorLine, _code.CursorCol, lineTokens);
             _autocompleteMenu.SetSuggestions(suggestions);
@@ -315,6 +335,7 @@ namespace AbesIde.UI
             _code.ScrollToCursor(_scrollView);
             _gutter.SetLineCount(_document.LineCount);
             UpdateTodoLines();
+            _autocompleteProvider.OnDocumentChanged(new DocumentChangeArgs(0, 0, 0, _document.LineCount, string.Empty, string.Join("\n", _document.Lines)), _document);
             _errorDebounceTask.ExecuteLater(500);
         }
 
@@ -341,12 +362,36 @@ namespace AbesIde.UI
             int totalLinesToReplace = args.LinesRemoved;
             int linesProcessed = 0;
 
+            // Shift TODO line indices below the edit
+            if (args.LinesAdded != args.LinesRemoved)
+            {
+                var newTodoLines = new HashSet<int>();
+                int delta = args.LinesAdded - args.LinesRemoved;
+                foreach (var line in _todoLines)
+                {
+                    if (line < args.StartLine) newTodoLines.Add(line);
+                    else if (line >= args.StartLine + args.LinesRemoved) newTodoLines.Add(line + delta);
+                }
+                _todoLines = newTodoLines;
+            }
+
             while (true)
             {
                 var lineText = _document.GetLine(currentLine);
                 _lineEntryStates[currentLine] = state;
                 var tokens = _tokenizer.TokenizeLine(lineText, state, out var nextState);
                 newTokens.Add(tokens);
+
+                // Update TODO status for this line
+                _todoLines.Remove(currentLine);
+                foreach (var token in tokens)
+                {
+                    if (token.Type == TokenType.Todo)
+                    {
+                        _todoLines.Add(currentLine);
+                        break;
+                    }
+                }
 
                 state = nextState;
                 currentLine++;
@@ -370,7 +415,8 @@ namespace AbesIde.UI
             _code.UpdateTokens(args.StartLine, totalLinesToReplace, newTokens);
             _code.ScrollToCursor(_scrollView);
             _gutter.SetLineCount(_document.LineCount);
-            UpdateTodoLines();
+            _gutter.SetTodoLines(_todoLines);
+            _autocompleteProvider.OnDocumentChanged(args, _document);
             _errorDebounceTask.ExecuteLater(500);
         }
 

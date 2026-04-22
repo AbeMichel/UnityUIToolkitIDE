@@ -121,6 +121,11 @@ namespace AbesIde.Providers
                 .OrderBy(s => s.Text);
         }
 
+        public void OnDocumentChanged(DocumentChangeArgs args, TextDocument document)
+        {
+            // TODO: Implement incremental harvesting for C#
+        }
+
         private IEnumerable<AutocompleteSuggestion> HarvestSymbols(TextDocument document)
         {
             var symbols = new HashSet<string>();

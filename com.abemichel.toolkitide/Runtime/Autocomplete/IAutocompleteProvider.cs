@@ -11,6 +11,8 @@ namespace AbesIde.Autocomplete
         /// </summary>
         IEnumerable<AutocompleteSuggestion> GetSuggestions(TextDocument document, int line, int col, List<TextToken> lineTokens);
 
+        void OnDocumentChanged(DocumentChangeArgs args, TextDocument document);
+
         void AddSuggestion(AutocompleteSuggestion suggestion);
         void RemoveSuggestion(string text);
     }
