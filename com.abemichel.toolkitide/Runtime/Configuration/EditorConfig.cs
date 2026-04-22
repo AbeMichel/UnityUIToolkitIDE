@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
 
-namespace Configuration
+namespace AbesIde.Configuration
 {
     public class EditorConfig
     {

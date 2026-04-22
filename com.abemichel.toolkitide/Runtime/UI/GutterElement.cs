@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Configuration;
-using Providers;
+using AbesIde.Configuration;
+using AbesIde.Providers;
 using UnityEngine;
 using UnityEngine.TextCore;
 using UnityEngine.UIElements;
 
-namespace UI
+namespace AbesIde.UI
 {
     public class GutterElement : VisualElement
     {

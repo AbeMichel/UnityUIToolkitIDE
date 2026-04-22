@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Tokenizing.Tokenizers
+namespace AbesIde.Tokenizing.Tokenizers
 {
     public class PythonTokenizer : RegexTokenizerBase
     {

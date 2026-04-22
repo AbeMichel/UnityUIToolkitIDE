@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using Autocomplete;
-using Configuration;
-using Document;
-using Providers;
-using Tokenizing;
+using AbesIde.Autocomplete;
+using AbesIde.Configuration;
+using AbesIde.Document;
+using AbesIde.Providers;
+using AbesIde.Tokenizing;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UI
+namespace AbesIde.UI
 {
     public class Ide : VisualElement
     {

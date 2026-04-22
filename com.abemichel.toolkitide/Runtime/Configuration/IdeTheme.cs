@@ -1,7 +1,7 @@
-using Tokenizing;
+using AbesIde.Tokenizing;
 using UnityEngine;
 
-namespace Configuration
+namespace AbesIde.Configuration
 {
     [CreateAssetMenu(fileName = "IdeTheme", menuName = "IDE/Theme")]
     public class IdeTheme : ScriptableObject

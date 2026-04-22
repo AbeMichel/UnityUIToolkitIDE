@@ -1,6 +1,6 @@
-using Tokenizing;
+using AbesIde.Tokenizing;
 
-namespace Autocomplete
+namespace AbesIde.Autocomplete
 {
     public struct AutocompleteSuggestion
     {

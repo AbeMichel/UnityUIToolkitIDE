@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Tokenizing
+namespace AbesIde.Tokenizing
 {
     public struct TokenRule
     {

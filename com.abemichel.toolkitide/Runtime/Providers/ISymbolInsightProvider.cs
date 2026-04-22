@@ -1,6 +1,6 @@
-using Document;
+using AbesIde.Document;
 
-namespace Providers
+namespace AbesIde.Providers
 {
     public struct SymbolInsight
     {

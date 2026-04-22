@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Tokenizing
+namespace AbesIde.Tokenizing
 {
     public enum TokenType
     {

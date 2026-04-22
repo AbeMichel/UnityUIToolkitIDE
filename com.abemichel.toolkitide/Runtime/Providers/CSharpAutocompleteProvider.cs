@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Autocomplete;
-using Document;
-using Tokenizing;
+using AbesIde.Autocomplete;
+using AbesIde.Document;
+using AbesIde.Tokenizing;
 
-namespace Providers
+namespace AbesIde.Providers
 {
     public class CSharpAutocompleteProvider : IAutocompleteProvider
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Document;
+using AbesIde.Document;
 
-namespace Providers
+namespace AbesIde.Providers
 {
     public class PythonSymbolInsightProvider : ISymbolInsightProvider
     {

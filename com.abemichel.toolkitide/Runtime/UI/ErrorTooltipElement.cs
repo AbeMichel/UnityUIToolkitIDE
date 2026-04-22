@@ -1,8 +1,8 @@
-using Configuration;
+using AbesIde.Configuration;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UI
+namespace AbesIde.UI
 {
     public class ErrorTooltipElement : VisualElement
     {

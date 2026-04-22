@@ -1,4 +1,4 @@
-namespace Document
+namespace AbesIde.Document
 {
     public struct DocumentChangeArgs
     {

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Document;
-using Tokenizing;
+using AbesIde.Document;
+using AbesIde.Tokenizing;
 
-namespace Autocomplete
+namespace AbesIde.Autocomplete
 {
     public interface IAutocompleteProvider
     {

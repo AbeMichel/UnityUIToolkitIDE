@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Configuration;
+using AbesIde.Configuration;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Autocomplete
+namespace AbesIde.Autocomplete
 {
     public class AutocompleteElement : VisualElement
     {

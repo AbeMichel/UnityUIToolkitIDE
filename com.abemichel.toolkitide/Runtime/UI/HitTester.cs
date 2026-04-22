@@ -1,8 +1,8 @@
-using Configuration;
-using Document;
+using AbesIde.Configuration;
+using AbesIde.Document;
 using UnityEngine;
 
-namespace UI
+namespace AbesIde.UI
 {
         public static class HitTester
         {

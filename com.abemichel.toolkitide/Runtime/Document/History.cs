@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Document
+namespace AbesIde.Document
 {
     public struct CursorState
     {

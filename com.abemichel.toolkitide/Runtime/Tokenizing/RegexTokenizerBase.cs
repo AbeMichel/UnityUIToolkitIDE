@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Document;
+using AbesIde.Document;
 
-namespace Tokenizing
+namespace AbesIde.Tokenizing
 {
     public abstract class RegexTokenizerBase : ITokenizer
     {
