@@ -101,6 +101,13 @@ namespace AbesIde.UI
             RegisterCallback<FocusInEvent>(e => { _blinkTask.Resume(); MarkActivity(); });
             RegisterCallback<FocusOutEvent>(e => { _blinkTask.Pause(); _cursorVisible = false; MarkDirtyRepaint(); });
 
+            // If mouse capture is stolen by another element (e.g. a resize handle using the               
+            // newer CapturePointer API), OnMouseUp never fires and _isDragging stays true.                
+            // A stuck _isDragging causes OnMouseMove to run with out-of-bounds localMousePosition,        
+            // silently moving the cursor off-screen and making subsequent typed characters appear         
+            // to vanish. Reset here so any capture loss cleans up the drag state.   
+            RegisterCallback<MouseCaptureOutEvent>(e => _isDragging = false);
+            
             _hoverTask = schedule.Execute(TriggerHover);
             _blinkTask = schedule.Execute(BlinkCursor).Every(500);
             _blinkTask.Pause();
